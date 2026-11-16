@@ -600,7 +600,7 @@ var FREE_SUPPLY=1888,PAID_SUPPLY=334,FREE_MAX=2,PAID_MAX=5,PAID_PRICE=0.0012,BNB
 var state={wallet:null,agentIdVerified:false,freeUsed:0,paidUsed:0,freeMinted:0,paidMinted:0};
 var CONTRACT="0x3091Fec6e86036951fC131029bCD768f55ed2a92";
 var RPC_URLS=["https://bsc-rpc.publicnode.com","https://bsc-dataseed.binance.org"];
-var SEL={freeMinted:"0xd10a1a2b",paidMinted:"0x2806b8fb",totalMinted:"0xa2309ff8",mintOpen:"0x24bbd049",hasAgentId:"0x4eab3ef2",cardKind:"0xedda3b1c",freeBy:"0xb441b7c4",paidBy:"0x66005836",freeMint:"0x7c928fe9",paidMint:"0x65cde733",engrave:"0x22a2b627"};
+var SEL={freeMinted:"0xd10a1a2b",paidMinted:"0x2806b8fb",totalMinted:"0xa2309ff8",mintOpen:"0x24bbd049",hasAgentId:"0x4eab3ef2",cardKind:"0xedda3b1c",freeBy:"0xb441b7c4",paidBy:"0x66005836",freeMint:"0x7c928fe9",paidMint:"0x65cde733",engrave:"0x22a2b627",engravedName:"0xb338de05"};
 var MINTED_TOPIC="0x140538f7003346d4628961ef82b7128021c494a8f1881ca2a8f24d8e743a4f05";
 var PAID_WEI="1200000000000000",ENGRAVE_WEI="500000000000000";
 var chain={loaded:false,open:false,free:0,paid:0,total:0};
@@ -617,6 +617,60 @@ async function chainHasAgentId(a){try{return (await chainUint(SEL.hasAgentId,enc
 async function walletTx(data,valueWei){var value="0x"+BigInt(valueWei).toString(16);var hash=await window.ethereum.request({method:"eth_sendTransaction",params:[{from:state.wallet,to:CONTRACT,data:data,value:value}]});for(var i=0;i<90;i++){await delay(2000);var rc=null;try{rc=await rpcCall("eth_getTransactionReceipt",[hash])}catch(e){}if(rc)return{hash:hash,receipt:rc}}return{hash:hash,receipt:null}}
 function mintedFromReceipt(rc){var out=[];if(!rc||!rc.logs)return out;rc.logs.forEach(function(l){if(l.address&&l.address.toLowerCase()===CONTRACT.toLowerCase()&&l.topics&&l.topics[0]===MINTED_TOPIC){out.push({tokenId:hexToInt(l.topics[2]),kind:hexToInt(l.data)})}});return out}
 refreshChain();
+
+/* ---- On-chain CardMinted events (Holder Rewards reads the chain) ---- */
+var FROM_BLOCK=133950000;
+var EVENTS_KEY="agentcard_chain_events_v1";
+var chainEvents=[];
+var chainEventsBlock=FROM_BLOCK-1;
+var chainRecords=[];
+var chainEventsLoaded=false;
+var chainLoading=false;
+try{var _ec=localStorage.getItem(EVENTS_KEY);if(_ec){var _ep=JSON.parse(_ec);if(_ep&&Array.isArray(_ep.events)){chainEvents=_ep.events;if(+_ep.block>=FROM_BLOCK-1)chainEventsBlock=+_ep.block}}}catch(e){chainEvents=[];chainEventsBlock=FROM_BLOCK-1}
+function saveEventsCache(){try{localStorage.setItem(EVENTS_KEY,JSON.stringify({block:chainEventsBlock,events:chainEvents}))}catch(e){}}
+function fmtStamp(ts){var d=new Date(ts);var mm=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];return String(d.getDate()).padStart(2,"0")+" "+mm[d.getMonth()]+" "+d.getFullYear()}
+function decString(hx){try{if(!hx||hx==="0x"||hx.length<130)return "";var len=hexToInt("0x"+hx.slice(66,130));if(!len||len>200)return "";var hex=hx.slice(130,130+len*2);var s="";for(var i=0;i+2<=hex.length;i+=2)s+=String.fromCharCode(parseInt(hex.substr(i,2),16));return s}catch(e){return ""}}
+async function buildChainRecords(){
+ var seen={},evs=[];
+ chainEvents.slice().sort(function(a,b){return a[3]-b[3]||a[4]-b[4]}).forEach(function(e){var k=e[3]+":"+e[4]+":"+e[0];if(!seen[k]){seen[k]=1;evs.push(e)}});
+ chainRecords=[];
+ if(!evs.length)return;
+ var b0=evs[0][3],b1=evs[evs.length-1][3],t0=null,t1=null;
+ try{var g0=await rpcCall("eth_getBlockByNumber",["0x"+b0.toString(16),false]);if(g0)t0=hexToInt(g0.timestamp)*1000}catch(e){}
+ try{var g1=await rpcCall("eth_getBlockByNumber",["0x"+b1.toString(16),false]);if(g1)t1=hexToInt(g1.timestamp)*1000}catch(e){}
+ if(t0==null)t0=Date.now();if(t1==null)t1=t0;
+ var fs=0,ps=0;
+ evs.forEach(function(e){
+  var kind=e[1],free=kind===0,seq=free?++fs:++ps;
+  var ts=(b1===b0||t1===t0)?t0:Math.round(t0+(e[3]-b0)*(t1-t0)/(b1-b0));
+  chainRecords.push({no:(free?"F-":"P-")+pad4(seq),tier:kind===2?"Rare":kind===3?"Legendary":"Common",issue:free?"free":"paid",kind:kind,owner:e[2],ownerShort:shortAddr(e[2]).toUpperCase(),ts:ts,issued:fmtStamp(ts),tokenId:e[0],customName:"",engravedName:""});
+ });
+ var legs=chainRecords.filter(function(r){return r.kind===3});
+ for(var i=0;i<legs.length;i++){try{var nm=decString(await callChain(SEL.engravedName+encUint(legs[i].tokenId)));if(nm){legs[i].engravedName=nm;legs[i].customName=nm}}catch(e){}}
+}
+async function loadChainEvents(){
+ if(chainLoading)return;chainLoading=true;
+ try{
+  var latest=hexToInt(await rpcCall("eth_blockNumber",[]));
+  if(latest>chainEventsBlock){
+   var got=[];
+   for(var b=chainEventsBlock+1;b<=latest;b+=20000){
+    var to=Math.min(b+19999,latest);
+    var logs=await rpcCall("eth_getLogs",[{address:CONTRACT,topics:[MINTED_TOPIC],fromBlock:"0x"+b.toString(16),toBlock:"0x"+to.toString(16)}]);
+    (logs||[]).forEach(function(l){if(l.topics&&l.topics.length>=3)got.push([hexToInt(l.topics[2]),hexToInt(l.data),"0x"+String(l.topics[1]).slice(-40).toLowerCase(),hexToInt(l.blockNumber),hexToInt(l.logIndex)])});
+   }
+   if(got.length)chainEvents=chainEvents.concat(got);
+   chainEventsBlock=latest;
+   saveEventsCache();
+  }
+  await buildChainRecords();
+  chainEventsLoaded=true;
+  renderRewards();
+ }catch(e){}
+ chainLoading=false;
+}
+loadChainEvents();
+setInterval(function(){refreshChain();loadChainEvents()},90000);
 var RECORDS_KEY="agentcard_mint_records_v1";
 var records=[];
 try{var _r=localStorage.getItem(RECORDS_KEY);if(_r){var _p=JSON.parse(_r);if(Array.isArray(_p))records=_p}}catch(e){records=[]}
@@ -656,24 +710,24 @@ function rateForTier(t){return TIER_RATE[t]!=null?TIER_RATE[t]:10}
 function recordTs(r){if(r.ts&&isFinite(+r.ts))return +r.ts;if(r.issued){var p=String(r.issued).trim().split(/\s+/);if(p.length===3&&MONTHS[p[1]]!=null){var d=new Date(+p[2],MONTHS[p[1]],+p[0],0,0,0,0);if(!isNaN(d.getTime()))return d.getTime()}}return Date.now()}
 function pointsForRecord(r,now){now=now||Date.now();var el=now-recordTs(r);if(el<0)el=0;return Math.floor(el/86400000*rateForTier(r.tier))}
 function relativeTime(ts){var d=Date.now()-ts;if(d<60000)return "just now";var m=Math.floor(d/60000);if(m<60)return m+"m ago";var h=Math.floor(m/60);if(h<24)return h+"h ago";var dd=Math.floor(h/24);if(dd<30)return dd+"d ago";var dt=new Date(ts);var mm=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];return String(dt.getDate()).padStart(2,"0")+" "+mm[dt.getMonth()]+" "+dt.getFullYear()}
-function aggregateOwners(now){now=now||Date.now();var map={};records.forEach(function(r){if(!r.owner)return;var k=r.owner.toLowerCase();if(!map[k])map[k]={owner:r.owner,cards:0,points:0,best:"Common",bestRank:-1};map[k].cards++;map[k].points+=pointsForRecord(r,now);var rk=TIER_RANK[r.tier]!=null?TIER_RANK[r.tier]:0;if(rk>map[k].bestRank){map[k].bestRank=rk;map[k].best=r.tier==="Standard"?"Common":r.tier}});return Object.keys(map).map(function(k){return map[k]}).sort(function(a,b){return b.points-a.points||b.cards-a.cards})}
+function aggregateOwners(now,list){now=now||Date.now();var src=list||records;var map={};src.forEach(function(r){if(!r.owner)return;var k=r.owner.toLowerCase();if(!map[k])map[k]={owner:r.owner,cards:0,points:0,best:"Common",bestRank:-1};map[k].cards++;map[k].points+=pointsForRecord(r,now);var rk=TIER_RANK[r.tier]!=null?TIER_RANK[r.tier]:0;if(rk>map[k].bestRank){map[k].bestRank=rk;map[k].best=r.tier==="Standard"?"Common":r.tier}});return Object.keys(map).map(function(k){return map[k]}).sort(function(a,b){return b.points-a.points||b.cards-a.cards})}
 function focusAddr(){return (dashboardAddr||state.wallet||"").toLowerCase()}
-function totalPointsFor(addr,now){if(!addr)return 0;var k=addr.toLowerCase(),t=0;records.forEach(function(r){if(r.owner&&r.owner.toLowerCase()===k)t+=pointsForRecord(r,now)});return t}
+function totalPointsFor(addr,now,list){if(!addr)return 0;var k=addr.toLowerCase(),t=0;var src=list||(chainEventsLoaded?chainRecords:records);src.forEach(function(r){if(r.owner&&r.owner.toLowerCase()===k)t+=pointsForRecord(r,now)});return t}
 function renderRewards(){
  var now=Date.now();
  var ht=$("hrTotal"),hl=$("hrLegendary"),hp=$("hrPaid"),hf=$("hrFree");
- if(ht){ht.textContent=records.length.toLocaleString("en-US");hl.textContent=records.filter(function(r){return r.tier==="Legendary"}).length.toLocaleString("en-US");hp.textContent=records.filter(function(r){return r.issue==="paid"}).length.toLocaleString("en-US");hf.textContent=records.filter(function(r){return r.issue==="free"}).length.toLocaleString("en-US")}
+ if(ht){var stTot,stFree,stPaid,stLeg;if(chain.loaded){stTot=chain.total;stFree=chain.free;stPaid=chain.paid}else if(chainEventsLoaded){stTot=chainRecords.length;stFree=chainRecords.filter(function(r){return r.issue==="free"}).length;stPaid=chainRecords.filter(function(r){return r.issue==="paid"}).length}else{stTot=records.length;stFree=records.filter(function(r){return r.issue==="free"}).length;stPaid=records.filter(function(r){return r.issue==="paid"}).length}stLeg=chainEventsLoaded?chainRecords.filter(function(r){return r.tier==="Legendary"}).length:records.filter(function(r){return r.tier==="Legendary"}).length;ht.textContent=stTot.toLocaleString("en-US");hl.textContent=stLeg.toLocaleString("en-US");hp.textContent=stPaid.toLocaleString("en-US");hf.textContent=stFree.toLocaleString("en-US")}
  var hw=$("hallWrap");
- if(hw){var legs=records.filter(function(r){return r.tier==="Legendary"});
+ if(hw){var legs=chainEventsLoaded?chainRecords.filter(function(r){return r.tier==="Legendary"}).map(function(r){return{name:"AURELION",tier:"Legendary",trait:"The Crowned Mask",img:"https://agentcard.cloud/nft/emblem-legendary.webp",alt:"Legendary card \u2014 full gold",no:r.no,ownerShort:r.ownerShort,issued:r.issued,customName:r.engravedName||"",issue:"paid"}}):records.filter(function(r){return r.tier==="Legendary"});
   if(!legs.length){hw.innerHTML='<div class="hall-empty"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="#C9A227" stroke-width="1.5"/><circle cx="50" cy="50" r="38" fill="none" stroke="rgba(201,162,39,.45)" stroke-width="1"/><path d="M50 32 64 40v18L50 68 36 58V40Z" fill="none" stroke="#C9A227" stroke-width="1.5"/><path d="M42 50c2.6-3.6 5.3-5.3 8-5.3s5.4 1.7 8 5.3c-2.6 3.6-5.3 5.3-8 5.3s-5.4-1.7-8-5.3Z" fill="none" stroke="#C9A227" stroke-width="1.5"/></svg><p>No Legendary has been engraved yet. The first Paid mints will stand here.</p></div>'}
   else{hw.innerHTML="";var g=document.createElement("div");g.className="hall-grid";legs.forEach(function(r){var ag={name:r.name,tier:r.tier,trait:r.trait,img:r.img,alt:r.alt};var ins={no:r.no,owner:r.ownerShort,issued:r.issued,name:r.customName||""};var h=document.createElement("div");h.innerHTML=cardHTML(ag,ins,r.issue);var ce=h.firstChild;g.appendChild(ce);if(r.issue==="paid"&&typeof bindFoil==="function")bindFoil(ce)});hw.appendChild(g)}
  }
  var aw=$("activityWrap");
- if(aw){if(!records.length){aw.innerHTML='<div class="hr-empty"><p>No cards engraved yet — the first mint opens this hall.</p></div>'}
-  else{var sorted=records.slice().sort(function(a,b){return recordTs(b)-recordTs(a)}).slice(0,8);var ul=document.createElement("ul");ul.className="act-list";sorted.forEach(function(r){var li=document.createElement("li");var tc=String(r.tier).toLowerCase();li.innerHTML='<span class="a-no">Nº '+r.no+'</span><span class="a-tier '+tc+'">'+String(r.tier).toUpperCase()+'</span><span>'+(r.issue==="paid"?"Premium Issue":"Standard Issue")+'</span><span>'+(r.ownerShort||(r.owner?shortAddr(r.owner).toUpperCase():""))+'</span><span class="a-time">'+relativeTime(recordTs(r))+'</span>';ul.appendChild(li)});aw.innerHTML="";aw.appendChild(ul)}
+ if(aw){var actSrc=chainEventsLoaded?chainRecords:records;if(!actSrc.length){aw.innerHTML='<div class="hr-empty"><p>No cards engraved yet — the first mint opens this hall.</p></div>'}
+  else{var sorted=actSrc.slice().sort(function(a,b){return recordTs(b)-recordTs(a)}).slice(0,8);var ul=document.createElement("ul");ul.className="act-list";sorted.forEach(function(r){var li=document.createElement("li");var tc=String(r.tier).toLowerCase();li.innerHTML='<span class="a-no">Nº '+r.no+'</span><span class="a-tier '+tc+'">'+String(r.tier).toUpperCase()+'</span><span>'+(r.issue==="paid"?"Premium Issue":"Standard Issue")+'</span><span>'+(r.ownerShort||(r.owner?shortAddr(r.owner).toUpperCase():""))+'</span><span class="a-time">'+relativeTime(recordTs(r))+'</span>';ul.appendChild(li)});aw.innerHTML="";aw.appendChild(ul)}
  }
  var lw=$("leaderboardWrap");
- if(lw){var aggs=aggregateOwners(now);
+ if(lw){var aggs=aggregateOwners(now,chainEventsLoaded?chainRecords:null);
   if(!aggs.length){lw.innerHTML='<div class="hr-empty"><p>The board is empty. Mint the first card and take rank #1.</p></div>'}
   else{var foc=focusAddr();var html='<div class="lb-head" aria-hidden="true"><span>#</span><span>Holder</span><span>Cards</span><span>Best</span><span style="text-align:right">Points</span></div>';aggs.slice(0,10).forEach(function(a,i){var me=foc&&a.owner.toLowerCase()===foc;html+='<div class="lb-row'+(me?" me":"")+'"><span class="lb-rank">'+(i+1)+'</span><span class="lb-addr">'+shortAddr(a.owner)+'</span><span class="lb-cards">'+a.cards+'</span><span class="lb-best">'+a.best+'</span><span class="lb-pts" data-owner="'+a.owner.toLowerCase()+'">'+a.points.toLocaleString("en-US")+' pts</span></div>'});lw.innerHTML=html}
  }
