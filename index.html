@@ -724,7 +724,7 @@ function renderRewards(){
  }
  var aw=$("activityWrap");
  if(aw){var actSrc=chainEventsLoaded?chainRecords:records;if(!actSrc.length){aw.innerHTML='<div class="hr-empty"><p>No cards engraved yet — the first mint opens this hall.</p></div>'}
-  else{var sorted=actSrc.slice().sort(function(a,b){return recordTs(b)-recordTs(a)}).slice(0,8);var ul=document.createElement("ul");ul.className="act-list";sorted.forEach(function(r){var li=document.createElement("li");var tc=String(r.tier).toLowerCase();li.innerHTML='<span class="a-no">Nº '+r.no+'</span><span class="a-tier '+tc+'">'+String(r.tier).toUpperCase()+'</span><span>'+(r.issue==="paid"?"Premium Issue":"Standard Issue")+'</span><span>'+(r.ownerShort||(r.owner?shortAddr(r.owner).toUpperCase():""))+'</span><span class="a-time">'+relativeTime(recordTs(r))+'</span>';ul.appendChild(li)});aw.innerHTML="";aw.appendChild(ul)}
+  else{var sorted=actSrc.slice().sort(function(a,b){return (recordTs(b)-recordTs(a))||((b.tokenId||0)-(a.tokenId||0))}).slice(0,8);var ul=document.createElement("ul");ul.className="act-list";sorted.forEach(function(r){var li=document.createElement("li");var tc=String(r.tier).toLowerCase();li.innerHTML='<span class="a-no">Nº '+r.no+'</span><span class="a-tier '+tc+'">'+String(r.tier).toUpperCase()+'</span><span>'+(r.issue==="paid"?"Premium Issue":"Standard Issue")+'</span><span>'+(r.ownerShort||(r.owner?shortAddr(r.owner).toUpperCase():""))+'</span><span class="a-time">'+relativeTime(recordTs(r))+'</span>';ul.appendChild(li)});aw.innerHTML="";aw.appendChild(ul)}
  }
  var lw=$("leaderboardWrap");
  if(lw){var aggs=aggregateOwners(now,chainEventsLoaded?chainRecords:null);
