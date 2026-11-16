@@ -1,0 +1,24 @@
+{
+ "name": "AgentCard — Premium Issue (Legendary)",
+ "description": "AgentCard — an engraved Agent ID Card on BNB Chain. Premium Issue, Legendary plate struck blank and engraved with the owner's wallet and mint date at mint.",
+ "image": "https://agentcard.cloud/nft/emblem-legendary.webp",
+ "external_url": "https://agentcard.cloud",
+ "attributes": [
+  {
+   "trait_type": "Issue",
+   "value": "Premium Issue"
+  },
+  {
+   "trait_type": "Tier",
+   "value": "Legendary"
+  },
+  {
+   "trait_type": "Mint",
+   "value": "Paid"
+  },
+  {
+   "trait_type": "Plate",
+   "value": "Full Gold"
+  }
+ ]
+}
