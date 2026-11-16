@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AgentCard — Deploy</title>
+<meta name="description" content="Owner-only deploy page for the AgentCard NFT contract on BNB Chain." />
+<link rel="icon" href="https://agentcard.cloud/favicon.ico" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0a0906; --panel:#14110a; --panel2:#1c1810; --line:#3a3220;
+    --ink:#f3ead3; --dim:#b3a888; --gold:#c9a227; --gold2:#e7c873; --steel:#9aa3ab;
+    --dark:#050403;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;
+    background-image:radial-gradient(900px 500px at 50% -10%,rgba(201,162,39,.12),transparent 60%);}
+  .wrap{max-width:860px;margin:0 auto;padding:28px 16px 64px}
+  header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+  header img{width:54px;height:54px;border:1px solid var(--gold);border-radius:8px}
+  h1{font-size:24px;margin:0;letter-spacing:2px;text-transform:uppercase;font-weight:600}
+  h1 .g{color:var(--gold2)}
+  .sub{color:var(--dim);font-size:14.5px;line-height:1.6;margin:6px 0 22px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin:0 0 18px}
+  .card h2{margin:0 0 6px;font-size:16px;text-transform:uppercase;letter-spacing:1.5px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .card h2 .num{color:var(--gold)}
+  .card p{color:var(--dim);font-size:14px;line-height:1.65;margin:6px 0}
+  .card ul{color:var(--dim);font-size:14px;line-height:1.75;margin:8px 0;padding-left:18px}
+  .card b{color:var(--ink)}
+  .pill{font-size:11px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel2);color:var(--dim);text-transform:uppercase;letter-spacing:1px;white-space:nowrap;font-family:ui-monospace,monospace}
+  .pill.ok{background:var(--gold);color:#171106;border-color:var(--gold)}
+  .pill.warn{background:transparent;color:var(--gold2);border-color:var(--gold)}
+  button{background:var(--gold);color:#171106;border:1px solid var(--gold);border-radius:8px;
+    font:inherit;font-weight:bold;font-size:14px;padding:11px 18px;cursor:pointer;text-transform:uppercase;letter-spacing:.5px}
+  button:hover{filter:brightness(1.08)}
+  button.alt{background:transparent;color:var(--gold2)}
+  button.pink{background:#7a2436;color:#f3ead3;border-color:#7a2436}
+  button.ghost{background:var(--panel2);color:var(--ink);border-color:var(--line)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  input[type=text]{flex:1;min-width:220px;background:#080604;color:var(--ink);border:1px solid var(--line);border-radius:8px;
+    font-family:ui-monospace,monospace;font-size:13.5px;padding:11px 12px;outline:none}
+  input[type=text]:focus{border-color:var(--gold)}
+  input[readonly]{color:var(--gold2);border-style:dashed}
+  label{display:block;font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px}
+  .addr{word-break:break-all;color:var(--gold2);font-size:13.5px;font-family:ui-monospace,monospace}
+  a{color:var(--gold2)}
+  #log{background:#050403;border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-family:ui-monospace,monospace;font-size:12.5px;line-height:1.65;
+    height:220px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+  #log .t{color:#6f6450} #log .err{color:#ff9db4} #log .good{color:var(--gold2)}
+  .kv{display:grid;grid-template-columns:170px 1fr;gap:6px 14px;font-size:14px;margin-top:8px}
+  .kv div:nth-child(odd){color:var(--dim);text-transform:uppercase;font-size:12px;letter-spacing:1px;padding-top:2px}
+  footer{color:#6f6450;font-size:12.5px;text-align:center;margin-top:26px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="https://agentcard.cloud/icon-192.png" alt="AgentCard" />
+    <div>
+      <h1>Agent<span class="g">Card</span> — Deploy</h1>
+      <div style="color:var(--dim);font-size:12px;letter-spacing:1px">OWNER-ONLY · BNB CHAIN</div>
+    </div>
+  </header>
+  <p class="sub">Owner-only page. Deploy the AgentCard NFT contract on BNB Chain, open mint when ready, and withdraw the mint fees. Free Mint eligibility is read on-chain from the Binance Agent ID registry — no manual verification lists. Nothing here deploys or moves funds without your wallet confirmation.</p>
+
+  <section class="card">
+    <h2><span><span class="num">01</span> Connect wallet</span><span class="pill" id="walletPill">Not connected</span></h2>
+    <p>Connect the wallet that should <b>own</b> the contract. It deploys the contract, is the only wallet that can open mint, set the base URI or withdraw, and receives the mint fees on withdraw.</p>
+    <div class="row"><button id="btnConnect">Connect Wallet</button><span class="addr" id="walletAddr"></span></div>
+  </section>
+
+  <section class="card">
+    <h2><span><span class="num">02</span> Deploy AgentCard</span><span class="pill" id="deployPill">Not deployed</span></h2>
+    <p>The Binance Agent ID registry is a constant built into the contract — shown here for the record, it is not a deploy parameter and cannot be changed:</p>
+    <label for="deployRegistry">Binance Agent ID registry (built into the contract)</label>
+    <input type="text" id="deployRegistry" value="0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F" readonly />
+    <p>The collection rules are fixed in the contract and cannot be changed:</p>
+    <ul>
+      <li><b>Supply:</b> 2,222 — 1,888 Free Mint + 334 Paid Mint, two independent pools. Neither pool blocks the other.</li>
+      <li><b>No phases:</b> one mint switch opens Free and Paid at the same moment. Paid is mintable from the first second mint opens.</li>
+      <li><b>Free Mint:</b> 0 BNB, max 2 per wallet, Binance Agent ID holders only — the contract checks the registry live at mint time. Always a Standard Issue Common card, no rarity roll.</li>
+      <li><b>Paid Mint:</b> 0.0012 BNB, max 5 per wallet, open to <b>every</b> wallet — Agent ID holders included (they may mint both Free and Paid). Rarity is rolled inside the mint transaction: Common 50% · Rare 32% · Legendary 18%.</li>
+      <li><b>No pre-numbering:</b> token IDs follow mint order from one counter. Each card's data file is chosen by its type: free.json · paid-common.json · paid-rare.json · paid-legendary.json.</li>
+      <li><b>Engraving:</b> a card's owner can engrave a custom name (1–16 chars) for 0.0005 BNB per engraving, stored on-chain.</li>
+      <li><b>Fees</b> stay in the contract until the owner withdraws them.</li>
+      <li><b>Mint starts CLOSED.</b> Open it in step 03 when you are ready — opening it opens Free and Paid together.</li>
+    </ul>
+    <label for="deployBaseUri">Metadata base URI (sent as the deploy argument — the hosted meta/ folder with the four type templates; must end with a slash; can be changed later in step 03)</label>
+    <input type="text" id="deployBaseUri" value="https://agentcard.cloud/meta/" />
+    <div class="row"><button id="btnDeploy" disabled>Deploy Contract</button></div>
+    <p>Contract: <span class="addr" id="contractAddr">—</span> <span id="contractLink"></span></p>
+    <label for="existingAddr">Already deployed? Paste the contract address to manage it here</label>
+    <div class="row"><input type="text" id="existingAddr" placeholder="0x…" /><button class="ghost" id="btnLoad">Load Contract</button></div>
+  </section>
+
+  <section class="card">
+    <h2><span><span class="num">03</span> Open / close mint &amp; base URI</span><span class="pill" id="mintPill">—</span></h2>
+    <p>One switch controls everything: <b>Open Mint opens Free and Paid together</b> — there are no phases and Paid never waits for Free.</p>
+    <label for="newBaseUri">New metadata base URI (must end with a slash)</label>
+    <div class="row"><input type="text" id="newBaseUri" value="https://agentcard.cloud/meta/" /><button class="alt" id="btnSetBase" disabled>Set Base URI</button></div>
+    <div class="row"><button id="btnOpen" disabled>Open Mint</button><button class="pink" id="btnClose" disabled>Close Mint</button></div>
+    <p id="step3note">Deploy or load the contract first.</p>
+  </section>
+
+  <section class="card">
+    <h2><span><span class="num">04</span> Check a Binance Agent ID</span><span class="pill" id="agentPill">Read-only</span></h2>
+    <p>Free Mint eligibility is automatic: at mint time the contract reads the Binance Agent ID registry (<a href="https://bscscan.com/address/0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F" target="_blank" rel="noopener">SPACE ID Agent ID</a>, the .ai identity NFT) and only wallets holding an Agent ID can Free Mint — the owner does not mark or approve wallets. Paid Mint needs no Agent ID and is open to everyone, Agent ID holders included. Use this checker to test any wallet:</p>
+    <label for="agentWallet">Wallet address</label>
+    <div class="row"><input type="text" id="agentWallet" placeholder="0x…" /><button class="alt" id="btnCheckAgent">Check Agent ID</button><span id="agentResult"></span></div>
+  </section>
+
+  <section class="card">
+    <h2><span><span class="num">05</span> Withdraw mint fees</span><span class="pill" id="balPill">—</span></h2>
+    <p>Withdraws all fees collected in the contract (Paid mints + engravings) to the owner wallet.</p>
+    <div class="row"><button id="btnWithdraw" disabled>Withdraw All Fees</button></div>
+  </section>
+
+  <section class="card">
+    <h2><span><span class="num">06</span> Summary</span><button class="ghost" id="btnRefresh" disabled>Refresh</button></h2>
+    <div class="kv">
+      <div>Contract</div><div class="addr" id="sumAddr">—</div>
+      <div>Owner</div><div class="addr" id="sumOwner">—</div>
+      <div>Agent ID registry</div><div class="addr" id="sumRegistry">—</div>
+      <div>Your Agent ID</div><div id="sumMyAgent">—</div>
+      <div>Mint status</div><div id="sumMint">—</div>
+      <div>Free minted</div><div id="sumFree">—</div>
+      <div>Paid minted</div><div id="sumPaid">—</div>
+      <div>Total minted</div><div id="sumTotal">—</div>
+      <div>Contract balance</div><div id="sumBal">—</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span>Log</span></h2>
+    <div id="log"></div>
+  </section>
+
+  <footer>
+    AgentCard · <a href="https://agentcard.cloud">agentcard.cloud</a> · Contract source: <a href="https://github.com/pokemontownss/Card-agent/tree/main/contracts">GitHub</a><br/>
+    This page runs entirely in your browser. Your keys never leave your wallet.
+  </footer>
+</div>
+
+<script>
+const ABI = [{"inputs":[{"internalType":"string","name":"initialBaseURI","type":"string"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721IncorrectOwner","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721InsufficientApproval","type":"error"},{"inputs":[{"internalType":"address","name":"approver","type":"address"}],"name":"ERC721InvalidApprover","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"}],"name":"ERC721InvalidOperator","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721InvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"receiver","type":"address"}],"name":"ERC721InvalidReceiver","type":"error"},{"inputs":[{"internalType":"address","name":"sender","type":"address"}],"name":"ERC721InvalidSender","type":"error"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721NonexistentToken","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"OwnableInvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"OwnableUnauthorizedAccount","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":false,"internalType":"bool","name":"approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"baseURI","type":"string"}],"name":"BaseURISet","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"minter","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":false,"internalType":"uint8","name":"kind","type":"uint8"}],"name":"CardMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":false,"internalType":"string","name":"name","type":"string"}],"name":"Engraved","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[],"name":"AGENT_ID_REGISTRY","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"ENGRAVE_FEE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"FREE_LIMIT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"FREE_MAX_PER_WALLET","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"KIND_FREE","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"KIND_PAID_COMMON","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"KIND_PAID_LEGENDARY","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"KIND_PAID_RARE","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MAX_SUPPLY","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PAID_LIMIT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PAID_MAX_PER_WALLET","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PAID_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"baseURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"cardKind","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"string","name":"name","type":"string"}],"name":"engrave","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"engravedName","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"qty","type":"uint256"}],"name":"freeMint","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"freeMinted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"freeMintedByWallet","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"freeRemaining","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"wallet","type":"address"}],"name":"hasAgentId","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"mintOpen","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"qty","type":"uint256"}],"name":"paidMint","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"paidMinted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"paidMintedByWallet","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"qty","type":"uint256"}],"name":"paidQuote","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"pure","type":"function"},{"inputs":[],"name":"paidRemaining","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"bool","name":"approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"newBaseURI","type":"string"}],"name":"setBaseURI","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bool","name":"_open","type":"bool"}],"name":"setMintOpen","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalMinted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"transferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}];
+const BYTECODE = "0x608060405234801561000f575f5ffd5b5060405161251b38038061251b83398101604081905261002e9161013c565b33604051806040016040528060098152602001681059d95b9d10d85c9960ba1b815250604051806040016040528060058152602001641050d0549160da1b815250815f908161007d9190610270565b50600161008a8282610270565b5050506001600160a01b0381166100ba57604051631e4fbdf760e01b81525f600482015260240160405180910390fd5b6100c3816100d7565b5060076100d08282610270565b505061032a565b600680546001600160a01b038381166001600160a01b0319831681179093556040519116919082907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0905f90a35050565b634e487b7160e01b5f52604160045260245ffd5b5f6020828403121561014c575f5ffd5b81516001600160401b03811115610161575f5ffd5b8201601f81018413610171575f5ffd5b80516001600160401b0381111561018a5761018a610128565b604051601f8201601f19908116603f011681016001600160401b03811182821017156101b8576101b8610128565b6040528181528282016020018610156101cf575f5ffd5b8160208401602083015e5f91810160200191909152949350505050565b600181811c9082168061020057607f821691505b60208210810361021e57634e487b7160e01b5f52602260045260245ffd5b50919050565b601f82111561026b57805f5260205f20601f840160051c810160208510156102495750805b601f840160051c820191505b81811015610268575f8155600101610255565b50505b505050565b81516001600160401b0381111561028957610289610128565b61029d8161029784546101ec565b84610224565b6020601f8211600181146102cf575f83156102b85750848201515b5f19600385901b1c1916600184901b178455610268565b5f84815260208120601f198516915b828110156102fe57878501518255602094850194600190920191016102de565b508482101561031b57868401515f19600387901b60f8161c191681555b50505050600190811b01905550565b6121e4806103375f395ff3fe608060405260043610610280575f3560e01c80637b88a45b11610155578063b88d4fde116100be578063d10a1a2b11610078578063d10a1a2b14610704578063e985e9c514610719578063edda3b1c14610738578063f0410e7a14610766578063f2fde38b14610780578063f8004d311461079f575f5ffd5b8063b88d4fde14610666578063b9cba19b14610685578063c25fc6c2146106a4578063c37b8362146106b7578063c681865e146106d1578063c87b56dd146106e5575f5ffd5b80639a90574b1161010f5780639a90574b146105c0578063a22cb465146105d4578063a2309ff8146105f3578063ac97d79b14610608578063b338de051461061c578063b441b7c41461063b575f5ffd5b80637b88a45b1461052c5780637c928fe914610540578063841b6ccc146105535780638da5cb5b1461057a57806390061a0a1461059757806395d89b41146105ac575f5ffd5b80633fbdea2d116101f75780636352211e116101b15780636352211e1461048857806365cde733146104a757806366005836146104ba5780636c0360eb146104e557806370a08231146104f9578063715018a614610518575f5ffd5b80633fbdea2d146103dd57806342842e0e146103f15780634b3c72e5146104105780634eab3ef21461043657806355f804b3146104555780635a781a6b14610474575f5ffd5b806323b872dd1161024857806323b872dd1461034457806324bbd049146103635780632806b8fb1461037c57806332cb6b0c1461039f5780633563beda146103b45780633ccfd60b146103c9575f5ffd5b806301ffc9a71461028457806306fdde03146102b8578063081812fc146102d9578063095ea7b31461031057806322a2b62714610331575b5f5ffd5b34801561028f575f5ffd5b506102a361029e366004611bf4565b6107be565b60405190151581526020015b60405180910390f35b3480156102c3575f5ffd5b506102cc61080f565b6040516102af9190611c44565b3480156102e4575f5ffd5b506102f86102f3366004611c56565b61089e565b6040516001600160a01b0390911681526020016102af565b34801561031b575f5ffd5b5061032f61032a366004611c88565b6108c5565b005b61032f61033f366004611cf5565b6108d4565b34801561034f575f5ffd5b5061032f61035e366004611d3d565b610a15565b34801561036e575f5ffd5b506008546102a39060ff1681565b348015610387575f5ffd5b50610391600b5481565b6040519081526020016102af565b3480156103aa575f5ffd5b506103916108ae81565b3480156103bf575f5ffd5b5061039161014e81565b3480156103d4575f5ffd5b5061032f610a9e565b3480156103e8575f5ffd5b50610391600581565b3480156103fc575f5ffd5b5061032f61040b366004611d3d565b610b7e565b34801561041b575f5ffd5b50610424600181565b60405160ff90911681526020016102af565b348015610441575f5ffd5b506102a3610450366004611d77565b610b9d565b348015610460575f5ffd5b5061032f61046f366004611d90565b610c22565b34801561047f575f5ffd5b50610391610c75565b348015610493575f5ffd5b506102f86104a2366004611c56565b610c8b565b61032f6104b5366004611c56565b610c95565b3480156104c5575f5ffd5b506103916104d4366004611d77565b600d6020525f908152604090205481565b3480156104f0575f5ffd5b506102cc610f74565b348015610504575f5ffd5b50610391610513366004611d77565b611000565b348015610523575f5ffd5b5061032f611045565b348015610537575f5ffd5b50610424600381565b61032f61054e366004611c56565b611058565b34801561055e575f5ffd5b506102f87360b9262456de011f7d15a54cdd8c48baaa8b022f81565b348015610585575f5ffd5b506006546001600160a01b03166102f8565b3480156105a2575f5ffd5b5061039161076081565b3480156105b7575f5ffd5b506102cc61135a565b3480156105cb575f5ffd5b50610391611369565b3480156105df575f5ffd5b5061032f6105ee366004611dde565b61137a565b3480156105fe575f5ffd5b5061039160095481565b348015610613575f5ffd5b50610424600281565b348015610627575f5ffd5b506102cc610636366004611c56565b611385565b348015610646575f5ffd5b50610391610655366004611d77565b600c6020525f908152604090205481565b348015610671575f5ffd5b5061032f610680366004611e23565b61139d565b348015610690575f5ffd5b5061039161069f366004611c56565b6113b5565b3480156106af575f5ffd5b506104245f81565b3480156106c2575f5ffd5b5061039166044364c5bb000081565b3480156106dc575f5ffd5b50610391600281565b3480156106f0575f5ffd5b506102cc6106ff366004611c56565b6113c7565b34801561070f575f5ffd5b50610391600a5481565b348015610724575f5ffd5b506102a3610733366004611f00565b6114df565b348015610743575f5ffd5b50610424610752366004611c56565b600e6020525f908152604090205460ff1681565b348015610771575f5ffd5b506103916601c6bf5263400081565b34801561078b575f5ffd5b5061032f61079a366004611d77565b61150c565b3480156107aa575f5ffd5b5061032f6107b9366004611f28565b611549565b5f6001600160e01b031982166380ac58cd60e01b14806107ee57506001600160e01b03198216635b5e139f60e01b145b8061080957506301ffc9a760e01b6001600160e01b03198316145b92915050565b60605f805461081d90611f41565b80601f016020809104026020016040519081016040528092919081815260200182805461084990611f41565b80156108945780601f1061086b57610100808354040283529160200191610894565b820191905f5260205f20905b81548152906001019060200180831161087757829003601f168201915b5050505050905090565b5f6108a882611564565b505f828152600460205260409020546001600160a01b0316610809565b6108d082823361159c565b5050565b336108de84610c8b565b6001600160a01b0316146109295760405162461bcd60e51b815260206004820152600d60248201526c1b9bdd081e5bdd5c8818d85c99609a1b60448201526064015b60405180910390fd5b6601c6bf52634000341461096b5760405162461bcd60e51b815260206004820152600960248201526877726f6e672066656560b81b6044820152606401610920565b806001811080159061097e575060108111155b6109bc5760405162461bcd60e51b815260206004820152600f60248201526e6e616d6520312d313620636861727360881b6044820152606401610920565b5f848152600f602052604090206109d4838583611fbd565b50837fb74bb2d3d6a31bd58984e0130a64eebf89a8a20d915d8f7fa6b42599c8e224798484604051610a07929190612077565b60405180910390a250505050565b6001600160a01b038216610a3e57604051633250574960e11b81525f6004820152602401610920565b5f610a4a8383336115a9565b9050836001600160a01b0316816001600160a01b031614610a98576040516364283d7b60e01b81526001600160a01b0380861660048301526024820184905282166044820152606401610920565b50505050565b610aa661169b565b4780610adc5760405162461bcd60e51b8152602060048201526005602482015264656d70747960d81b6044820152606401610920565b5f610aef6006546001600160a01b031690565b6001600160a01b0316826040515f6040518083038185875af1925050503d805f8114610b36576040519150601f19603f3d011682016040523d82523d5f602084013e610b3b565b606091505b50509050806108d05760405162461bcd60e51b815260206004820152600f60248201526e1dda5d1a191c985dc819985a5b1959608a1b6044820152606401610920565b610b9883838360405180602001604052805f81525061139d565b505050565b6040516370a0823160e01b81526001600160a01b03821660048201525f9081907360b9262456de011f7d15a54cdd8c48baaa8b022f906370a0823190602401602060405180830381865afa158015610bf7573d5f5f3e3d5ffd5b505050506040513d601f19601f82011682018060405250810190610c1b91906120a5565b1192915050565b610c2a61169b565b6007610c37828483611fbd565b507ff9c7803e94e0d3c02900d8a90893a6d5e90dd04d32a4cfe825520f82bf9f32f68282604051610c69929190612077565b60405180910390a15050565b5f600a54610760610c8691906120d0565b905090565b5f61080982611564565b60085460ff16610cd55760405162461bcd60e51b815260206004820152600b60248201526a1b5a5b9d0818db1bdcd95960aa1b6044820152606401610920565b333214610d135760405162461bcd60e51b815260206004820152600c60248201526b6e6f20636f6e74726163747360a01b6044820152606401610920565b5f8111610d4d5760405162461bcd60e51b8152602060048201526008602482015267717479207a65726f60c01b6044820152606401610920565b335f908152600d6020526040902054600590610d6a9083906120e3565b1115610db05760405162461bcd60e51b81526020600482015260156024820152741b585e080d481c185a59081c195c881dd85b1b195d605a1b6044820152606401610920565b61014e81600b54610dc191906120e3565b1115610e045760405162461bcd60e51b81526020600482015260126024820152711c185a59081c1bdbdb081cdbdb19081bdd5d60721b6044820152606401610920565b6108ae81600954610e1591906120e3565b1115610e4c5760405162461bcd60e51b8152602060048201526006602482015265737570706c7960d01b6044820152606401610920565b610e5d66044364c5bb0000826120f6565b3414610e975760405162461bcd60e51b815260206004820152600960248201526877726f6e672066656560b81b6044820152606401610920565b5f5b818110156108d057600160095f828254610eb391906120e3565b925050819055506001600b5f828254610ecc91906120e3565b9091555050335f908152600d60205260408120805460019290610ef09084906120e3565b925050819055505f610f036009546116c8565b600980545f908152600e60205260409020805460ff191660ff841617905554909150610f3090339061175c565b60095460405160ff8316815233907f140538f7003346d4628961ef82b7128021c494a8f1881ca2a8f24d8e743a4f059060200160405180910390a350600101610e99565b60078054610f8190611f41565b80601f0160208091040260200160405190810160405280929190818152602001828054610fad90611f41565b8015610ff85780601f10610fcf57610100808354040283529160200191610ff8565b820191905f5260205f20905b815481529060010190602001808311610fdb57829003601f168201915b505050505081565b5f6001600160a01b03821661102a576040516322718ad960e21b81525f6004820152602401610920565b506001600160a01b03165f9081526003602052604090205490565b61104d61169b565b6110565f611775565b565b60085460ff166110985760405162461bcd60e51b815260206004820152600b60248201526a1b5a5b9d0818db1bdcd95960aa1b6044820152606401610920565b3332146110d65760405162461bcd60e51b815260206004820152600c60248201526b6e6f20636f6e74726163747360a01b6044820152606401610920565b5f81116111105760405162461bcd60e51b8152602060048201526008602482015267717479207a65726f60c01b6044820152606401610920565b34156111525760405162461bcd60e51b815260206004820152601160248201527066726565206d696e74206973206672656560781b6044820152606401610920565b61115b33610b9d565b6111985760405162461bcd60e51b815260206004820152600e60248201526d1b9959591cc81059d95b9d08125160921b6044820152606401610920565b335f908152600c60205260409020546002906111b59083906120e3565b11156111fb5760405162461bcd60e51b81526020600482015260156024820152741b585e080c88199c9959481c195c881dd85b1b195d605a1b6044820152606401610920565b61076081600a5461120c91906120e3565b111561124f5760405162461bcd60e51b8152602060048201526012602482015271199c9959481c1bdbdb081cdbdb19081bdd5d60721b6044820152606401610920565b6108ae8160095461126091906120e3565b11156112975760405162461bcd60e51b8152602060048201526006602482015265737570706c7960d01b6044820152606401610920565b5f5b818110156108d057600160095f8282546112b391906120e3565b925050819055506001600a5f8282546112cc91906120e3565b9091555050335f908152600c602052604081208054600192906112f09084906120e3565b9091555050600980545f908152600e60205260409020805460ff191690555461131a90339061175c565b6009546040515f815233907f140538f7003346d4628961ef82b7128021c494a8f1881ca2a8f24d8e743a4f059060200160405180910390a3600101611299565b60606001805461081d90611f41565b5f600b5461014e610c8691906120d0565b6108d03383836117c6565b600f6020525f908152604090208054610f8190611f41565b6113a8848484610a15565b610a983385858585611864565b5f61080966044364c5bb0000836120f6565b60606113d282611564565b505f828152600e60209081526040918290205482518084019093526009835268333932b2973539b7b760b91b9183019190915260ff16905f19820161143e575060408051808201909152601081526f3830b4b216b1b7b6b6b7b7173539b7b760811b60208201526114ad565b60011960ff831601611475575060408051808201909152600e81526d3830b4b216b930b932973539b7b760911b60208201526114ad565b60021960ff8316016114ad57506040805180820190915260138152723830b4b216b632b3b2b73230b93c973539b7b760691b60208201525b6114b561198c565b816040516020016114c7929190612124565b60405160208183030381529060405292505050919050565b6001600160a01b039182165f90815260056020908152604080832093909416825291909152205460ff1690565b61151461169b565b6001600160a01b03811661153d57604051631e4fbdf760e01b81525f6004820152602401610920565b61154681611775565b50565b61155161169b565b6008805460ff1916911515919091179055565b5f818152600260205260408120546001600160a01b03168061080957604051637e27328960e01b815260048101849052602401610920565b610b98838383600161199b565b5f828152600260205260408120546001600160a01b03908116908316156115d5576115d5818486611a9f565b6001600160a01b0381161561160f576115f05f855f5f61199b565b6001600160a01b0381165f90815260036020526040902080545f190190555b6001600160a01b0385161561163d576001600160a01b0385165f908152600360205260409020805460010190555b5f8481526002602052604080822080546001600160a01b0319166001600160a01b0389811691821790925591518793918516917fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef91a4949350505050565b6006546001600160a01b031633146110565760405163118cdaa760e01b8152336004820152602401610920565b5f5f60644442338660405160200161170b9493929190938452602084019290925260601b6bffffffffffffffffffffffff19166040830152605482015260740190565b604051602081830303815290604052805190602001205f1c61172d9190612138565b905060328110156117415750600192915050565b60528110156117535750600292915050565b50600392915050565b6108d0828260405180602001604052805f815250611b03565b600680546001600160a01b038381166001600160a01b0319831681179093556040519116919082907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0905f90a35050565b6001600160a01b0382166117f857604051630b61174360e31b81526001600160a01b0383166004820152602401610920565b6001600160a01b038381165f81815260056020908152604080832094871680845294825291829020805460ff191686151590811790915591519182527f17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31910160405180910390a3505050565b6001600160a01b0383163b1561198557604051630a85bd0160e11b81526001600160a01b0384169063150b7a02906118a6908890889087908790600401612157565b6020604051808303815f875af19250505080156118e0575060408051601f3d908101601f191682019092526118dd91810190612193565b60015b611947573d80801561190d576040519150601f19603f3d011682016040523d82523d5f602084013e611912565b606091505b5080515f0361193f57604051633250574960e11b81526001600160a01b0385166004820152602401610920565b805181602001fd5b6001600160e01b03198116630a85bd0160e11b1461198357604051633250574960e11b81526001600160a01b0385166004820152602401610920565b505b5050505050565b60606007805461081d90611f41565b80806119af57506001600160a01b03821615155b15611a70575f6119be84611564565b90506001600160a01b038316158015906119ea5750826001600160a01b0316816001600160a01b031614155b80156119fd57506119fb81846114df565b155b15611a265760405163a9fbf51f60e01b81526001600160a01b0384166004820152602401610920565b8115611a6e5783856001600160a01b0316826001600160a01b03167f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b92560405160405180910390a45b505b50505f90815260046020526040902080546001600160a01b0319166001600160a01b0392909216919091179055565b611aaa838383611b1a565b610b98576001600160a01b038316611ad857604051637e27328960e01b815260048101829052602401610920565b60405163177e802f60e01b81526001600160a01b038316600482015260248101829052604401610920565b611b0d8383611b7e565b610b98335f858585611864565b5f6001600160a01b03831615801590611b765750826001600160a01b0316846001600160a01b03161480611b535750611b5384846114df565b80611b7657505f828152600460205260409020546001600160a01b038481169116145b949350505050565b6001600160a01b038216611ba757604051633250574960e11b81525f6004820152602401610920565b5f611bb383835f6115a9565b90506001600160a01b03811615610b98576040516339e3563760e11b81525f6004820152602401610920565b6001600160e01b031981168114611546575f5ffd5b5f60208284031215611c04575f5ffd5b8135611c0f81611bdf565b9392505050565b5f81518084528060208401602086015e5f602082860101526020601f19601f83011685010191505092915050565b602081525f611c0f6020830184611c16565b5f60208284031215611c66575f5ffd5b5035919050565b80356001600160a01b0381168114611c83575f5ffd5b919050565b5f5f60408385031215611c99575f5ffd5b611ca283611c6d565b946020939093013593505050565b5f5f83601f840112611cc0575f5ffd5b50813567ffffffffffffffff811115611cd7575f5ffd5b602083019150836020828501011115611cee575f5ffd5b9250929050565b5f5f5f60408486031215611d07575f5ffd5b83359250602084013567ffffffffffffffff811115611d24575f5ffd5b611d3086828701611cb0565b9497909650939450505050565b5f5f5f60608486031215611d4f575f5ffd5b611d5884611c6d565b9250611d6660208501611c6d565b929592945050506040919091013590565b5f60208284031215611d87575f5ffd5b611c0f82611c6d565b5f5f60208385031215611da1575f5ffd5b823567ffffffffffffffff811115611db7575f5ffd5b611dc385828601611cb0565b90969095509350505050565b80358015158114611c83575f5ffd5b5f5f60408385031215611def575f5ffd5b611df883611c6d565b9150611e0660208401611dcf565b90509250929050565b634e487b7160e01b5f52604160045260245ffd5b5f5f5f5f60808587031215611e36575f5ffd5b611e3f85611c6d565b9350611e4d60208601611c6d565b925060408501359150606085013567ffffffffffffffff811115611e6f575f5ffd5b8501601f81018713611e7f575f5ffd5b803567ffffffffffffffff811115611e9957611e99611e0f565b604051601f8201601f19908116603f0116810167ffffffffffffffff81118282101715611ec857611ec8611e0f565b604052818152828201602001891015611edf575f5ffd5b816020840160208301375f6020838301015280935050505092959194509250565b5f5f60408385031215611f11575f5ffd5b611f1a83611c6d565b9150611e0660208401611c6d565b5f60208284031215611f38575f5ffd5b611c0f82611dcf565b600181811c90821680611f5557607f821691505b602082108103611f7357634e487b7160e01b5f52602260045260245ffd5b50919050565b601f821115610b9857805f5260205f20601f840160051c81016020851015611f9e5750805b601f840160051c820191505b81811015611985575f8155600101611faa565b67ffffffffffffffff831115611fd557611fd5611e0f565b611fe983611fe38354611f41565b83611f79565b5f601f84116001811461201a575f85156120035750838201355b5f19600387901b1c1916600186901b178355611985565b5f83815260208120601f198716915b828110156120495786850135825560209485019460019092019101612029565b5086821015612065575f1960f88860031b161c19848701351681555b505060018560011b0183555050505050565b60208152816020820152818360408301375f818301604090810191909152601f909201601f19160101919050565b5f602082840312156120b5575f5ffd5b5051919050565b634e487b7160e01b5f52601160045260245ffd5b81810381811115610809576108096120bc565b80820180821115610809576108096120bc565b8082028115828204841417610809576108096120bc565b5f81518060208401855e5f93019283525090919050565b5f611b76612132838661210d565b8461210d565b5f8261215257634e487b7160e01b5f52601260045260245ffd5b500690565b6001600160a01b03858116825284166020820152604081018390526080606082018190525f9061218990830184611c16565b9695505050505050565b5f602082840312156121a3575f5ffd5b8151611c0f81611bdf56fea26469706673582212202af8e5251dc1b3a4d788e7dd29360f0adf6802cace92c5604c1f6c657b4cd11564736f6c634300081c0033";
+const REGISTRY = "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F";
+const REGISTRY_ABI = ["function balanceOf(address) view returns (uint256)"];
+const BASE_URI_DEFAULT = "https://agentcard.cloud/meta/";
+const LS_KEY = "agentcardContractAddress";
+
+let provider = null, signer = null, account = null, contract = null, contractAddress = null;
+
+const $ = id => document.getElementById(id);
+const logEl = $("log");
+function log(msg, cls) {
+  const t = new Date().toLocaleTimeString();
+  const line = document.createElement("div");
+  if (cls) line.className = cls;
+  line.innerHTML = '<span class="t">[' + t + ']</span> ' + msg;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function scanLink(addr) { return "https://bscscan.com/address/" + addr; }
+function txLink(hash) { return "https://bscscan.com/tx/" + hash; }
+function short(a) { return a ? a.slice(0, 6) + "…" + a.slice(-4) : "—"; }
+function errText(e) { return (e && (e.shortMessage || e.message)) || String(e); }
+
+async function ensureBnbChain() {
+  const net = await provider.getNetwork();
+  if (net.chainId === 56n) return;
+  log("Wrong network — switching to BNB Chain…");
+  try {
+    await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x38" }] });
+  } catch (e) {
+    if (e && e.code === 4902) {
+      await window.ethereum.request({ method: "wallet_addEthereumChain", params: [{
+        chainId: "0x38", chainName: "BNB Chain",
+        nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
+        rpcUrls: ["https://bsc-dataseed.binance.org"], blockExplorerUrls: ["https://bscscan.com"]
+      }] });
+    } else { throw e; }
+  }
+  provider = new ethers.BrowserProvider(window.ethereum);
+}
+
+async function registryBalance(wallet) {
+  const providers = [];
+  if (provider) providers.push(provider);
+  providers.push(new ethers.JsonRpcProvider("https://bsc-rpc.publicnode.com"));
+  providers.push(new ethers.JsonRpcProvider("https://bsc-dataseed.binance.org"));
+  let lastErr = null;
+  for (const p of providers) {
+    try {
+      const reg = new ethers.Contract(REGISTRY, REGISTRY_ABI, p);
+      return await reg.balanceOf(wallet);
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error("Registry unreachable");
+}
+
+async function connect() {
+  if (typeof window.ethereum === "undefined") { log("No wallet found. Open this page inside a wallet browser (MetaMask, Binance Wallet, Trust Wallet) or install a wallet extension.", "err"); return; }
+  if (typeof window.ethers === "undefined") { log("Library failed to load — check your connection and reload the page.", "err"); return; }
+  try {
+    provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    await ensureBnbChain();
+    signer = await provider.getSigner();
+    account = await signer.getAddress();
+    $("walletPill").textContent = "Connected"; $("walletPill").className = "pill ok";
+    $("walletAddr").textContent = account;
+    $("btnDeploy").disabled = false;
+    log("Wallet connected: " + account, "good");
+    try {
+      const bal = await registryBalance(account);
+      $("sumMyAgent").textContent = bal > 0n ? "Holds an Agent ID ✓ — can Free Mint (and Paid Mint)" : "No Agent ID — Paid Mint only";
+      log(bal > 0n ? "This wallet holds a Binance Agent ID." : "This wallet holds no Binance Agent ID (fine for the owner wallet — the gate only applies to Free Mint).");
+    } catch (e) { log("Could not read the Agent ID registry: " + errText(e), "err"); }
+    const saved = localStorage.getItem(LS_KEY);
+    if (saved && ethers.isAddress(saved)) { $("existingAddr").value = saved; await loadContract(saved); }
+    refreshOwnerButtons();
+  } catch (e) { log("Connect failed: " + errText(e), "err"); }
+}
+
+function attach(addr) {
+  contractAddress = addr;
+  contract = new ethers.Contract(addr, ABI, signer || provider);
+  localStorage.setItem(LS_KEY, addr);
+  $("contractAddr").textContent = addr;
+  $("contractLink").innerHTML = '· <a href="' + scanLink(addr) + '" target="_blank" rel="noopener">BscScan</a>';
+  $("deployPill").textContent = "Deployed"; $("deployPill").className = "pill ok";
+  $("step3note").textContent = "Owner actions below act on this contract.";
+}
+
+async function loadContract(addr) {
+  if (!ethers.isAddress(addr)) { log("That is not a valid contract address.", "err"); return; }
+  if (!provider) { log("Connect your wallet first.", "err"); return; }
+  attach(addr);
+  log("Contract loaded: " + addr);
+  await refreshSummary();
+  refreshOwnerButtons();
+}
+
+async function refreshOwnerButtons() {
+  const has = !!contract;
+  ["btnSetBase","btnOpen","btnClose","btnWithdraw","btnRefresh"].forEach(id => { $(id).disabled = !has; });
+  if (!has || !account) return;
+  try {
+    const owner = await contract.owner();
+    if (owner.toLowerCase() !== account.toLowerCase()) {
+      log("Note: connected wallet is not the contract owner (" + short(owner) + "). Owner actions will be rejected by the contract.", "err");
+    }
+  } catch (e) { /* read-only provider */ }
+}
+
+async function refreshSummary() {
+  if (!contract) return;
+  try {
+    const [owner, open, free, paid, total, bal, reg] = await Promise.all([
+      contract.owner(), contract.mintOpen(), contract.freeMinted(), contract.paidMinted(), contract.totalMinted(),
+      provider.getBalance(contractAddress), contract.AGENT_ID_REGISTRY()
+    ]);
+    $("sumAddr").textContent = contractAddress;
+    $("sumOwner").textContent = owner;
+    $("sumRegistry").textContent = reg;
+    $("sumMint").textContent = open ? "OPEN — Free and Paid together" : "CLOSED";
+    $("sumFree").textContent = free.toString() + " / 1,888";
+    $("sumPaid").textContent = paid.toString() + " / 334";
+    $("sumTotal").textContent = total.toString() + " / 2,222";
+    $("sumBal").textContent = ethers.formatEther(bal) + " BNB";
+    $("mintPill").textContent = open ? "Mint open" : "Mint closed";
+    $("mintPill").className = "pill " + (open ? "ok" : "warn");
+    $("balPill").textContent = ethers.formatEther(bal) + " BNB in contract";
+  } catch (e) { log("Could not read contract state: " + errText(e), "err"); }
+}
+
+async function sendTx(label, fn) {
+  try {
+    log(label + " — confirm in your wallet…");
+    const tx = await fn();
+    log(label + ' tx sent: <a href="' + txLink(tx.hash) + '" target="_blank" rel="noopener">' + tx.hash + '</a>');
+    await tx.wait();
+    log(label + " confirmed.", "good");
+    await refreshSummary();
+    return true;
+  } catch (e) { log(label + " failed: " + errText(e), "err"); return false; }
+}
+
+async function deploy() {
+  if (!signer) { log("Connect your wallet first.", "err"); return; }
+  const uri = $("deployBaseUri").value.trim();
+  if (!uri.endsWith("/")) { log("Base URI must end with a slash.", "err"); return; }
+  try {
+    $("btnDeploy").disabled = true;
+    log("Deploying AgentCard with metadata base URI " + uri + " — confirm the deployment in your wallet…");
+    const factory = new ethers.ContractFactory(ABI, BYTECODE, signer);
+    const c = await factory.deploy(uri);
+    const depTx = c.deploymentTransaction();
+    if (depTx) log('Deploy tx: <a href="' + txLink(depTx.hash) + '" target="_blank" rel="noopener">' + depTx.hash + '</a>');
+    await c.waitForDeployment();
+    const addr = await c.getAddress();
+    attach(addr);
+    contract = c.connect(signer);
+    log("Contract deployed at " + addr, "good");
+    log('View it on <a href="' + scanLink(addr) + '" target="_blank" rel="noopener">BscScan</a>. Next: open mint in step 03 when you are ready — one switch opens Free and Paid together. Then tell Muse the contract address so the website can be wired to it.');
+    await refreshSummary();
+    refreshOwnerButtons();
+  } catch (e) { log("Deploy failed: " + errText(e), "err"); }
+  $("btnDeploy").disabled = false;
+}
+
+async function checkAgent() {
+  if (typeof window.ethers === "undefined") { log("Library failed to load — check your connection and reload the page.", "err"); return; }
+  const w = $("agentWallet").value.trim();
+  if (!ethers.isAddress(w)) { log("Enter a valid wallet address to check.", "err"); return; }
+  $("agentResult").textContent = "Checking…";
+  try {
+    const bal = await registryBalance(w);
+    if (bal > 0n) {
+      $("agentResult").innerHTML = '<span class="pill ok">Holds Agent ID ✓</span>';
+      log(w + " holds a Binance Agent ID — this wallet can Free Mint (max 2) and can also Paid Mint.", "good");
+    } else {
+      $("agentResult").innerHTML = '<span class="pill warn">No Agent ID</span>';
+      log(w + " holds no Binance Agent ID — Free Mint will revert for this wallet; Paid Mint still works.");
+    }
+  } catch (e) { $("agentResult").textContent = ""; log("Agent ID check failed: " + errText(e), "err"); }
+}
+
+$("btnConnect").addEventListener("click", connect);
+$("btnDeploy").addEventListener("click", deploy);
+$("btnLoad").addEventListener("click", () => loadContract($("existingAddr").value.trim()));
+$("btnSetBase").addEventListener("click", () => {
+  const uri = $("newBaseUri").value.trim();
+  if (!uri.endsWith("/")) { log("Base URI must end with a slash.", "err"); return; }
+  sendTx("Set base URI", () => contract.connect(signer).setBaseURI(uri));
+});
+$("btnOpen").addEventListener("click", () => sendTx("Open mint (Free + Paid together)", () => contract.connect(signer).setMintOpen(true)));
+$("btnClose").addEventListener("click", () => sendTx("Close mint", () => contract.connect(signer).setMintOpen(false)));
+$("btnCheckAgent").addEventListener("click", checkAgent);
+$("btnWithdraw").addEventListener("click", () => sendTx("Withdraw fees", () => contract.connect(signer).withdraw()));
+$("btnRefresh").addEventListener("click", refreshSummary);
+
+log("Ready. Step 1: connect the owner wallet.");
+</script>
+</body>
+</html>
