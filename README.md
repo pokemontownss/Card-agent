@@ -28,4 +28,4 @@ To publish with GitHub Pages: Settings → Pages → deploy from branch `main`, 
 
 - Website: live in this repo.
 - Smart contract: **coming soon** — until it is deployed, the site's mint, points and lookup run in clearly labelled preview mode on the site's own records.
-- NFT token files: the numbered token images and `meta/` metadata JSON files are added together with the contract, so every `tokenURI` resolves from day one.
+- NFT token files: **ready** — `meta/1.json` … `meta/2222.json` are in this repo. Token IDs 1–1,888 are the Free allocation (cards F-0001–F-1888, Standard Issue steel, image `nft/standard.webp`); token IDs 1,889–2,222 are the Paid allocation (cards P-0001–P-0334, Premium Issue). Paid rarity is pre-dealt into the 334 slots at the published odds — Common 167 · Rare 107 · Legendary 60 — each pointing at its plate image (`nft/emblem.webp`, `nft/emblem-rare.webp`, `nft/emblem-legendary.webp`), so the contract's base URI is `https://agentcard.cloud/meta/` and every `tokenURI` resolves from day one.

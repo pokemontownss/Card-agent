@@ -1,0 +1,28 @@
+{
+ "name": "AgentCard P-0099",
+ "description": "AgentCard — an engraved Agent ID Card on BNB Chain. Premium Issue, Common plate struck blank and engraved with the owner's wallet, card number and mint date at mint.",
+ "image": "https://agentcard.cloud/nft/emblem.webp",
+ "external_url": "https://agentcard.cloud",
+ "attributes": [
+  {
+   "trait_type": "Issue",
+   "value": "Premium Issue"
+  },
+  {
+   "trait_type": "Tier",
+   "value": "Common"
+  },
+  {
+   "trait_type": "Mint",
+   "value": "Paid"
+  },
+  {
+   "trait_type": "Plate",
+   "value": "Gold"
+  },
+  {
+   "trait_type": "Card Number",
+   "value": "P-0099"
+  }
+ ]
+}
