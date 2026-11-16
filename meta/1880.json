@@ -1,0 +1,28 @@
+{
+ "name": "AgentCard F-1880",
+ "description": "AgentCard — an engraved Agent ID Card on BNB Chain. Standard Issue in brushed steel, struck free for Binance Agent ID holders. The owner's wallet, card number and mint date are engraved on the plate at mint.",
+ "image": "https://agentcard.cloud/nft/standard.webp",
+ "external_url": "https://agentcard.cloud",
+ "attributes": [
+  {
+   "trait_type": "Issue",
+   "value": "Standard Issue"
+  },
+  {
+   "trait_type": "Tier",
+   "value": "Common"
+  },
+  {
+   "trait_type": "Mint",
+   "value": "Free"
+  },
+  {
+   "trait_type": "Plate",
+   "value": "Steel"
+  },
+  {
+   "trait_type": "Card Number",
+   "value": "F-1880"
+  }
+ ]
+}
