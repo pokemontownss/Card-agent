@@ -158,6 +158,7 @@ h1 em{font-style:italic;color:var(--gold2);display:block}
 .qctrl output{width:40px;text-align:center;font-family:var(--fm);font-weight:700}
 .qtot{font-family:var(--fm);font-size:12px;color:var(--muted)}.qtot b{color:var(--gold2)}
 .mact{width:100%;min-height:3.25rem}
+.btn[disabled]{opacity:.45;cursor:not-allowed}.qctrl button[disabled]{opacity:.35;cursor:not-allowed}.btn.soldout{opacity:.5;pointer-events:none}
 .mstat{margin-top:10px;font-size:12px;color:var(--muted);min-height:1.4em;font-family:var(--fm)}
 .mstat.ok{color:#A9BD8F}.mstat.err{color:#D59A86}
 .vrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -359,7 +360,7 @@ footer.site img{width:48px;height:48px;object-fit:cover;clip-path:polygon(50% 0,
     <h1>One card.<em>Your name in gold.</em></h1>
     <p class="hero-sub">2,222 engraved Agent ID Cards on BNB Chain. Each one is inscribed with its owner at the moment it is minted.</p>
     <div class="ctas">
-      <a class="btn btn-steel" href="#mint">Mint Free — 0 BNB</a>
+      <a class="btn btn-steel soldout" href="#mint" aria-disabled="true">Free — Sold Out</a>
       <a class="btn btn-gold" href="#mint">Mint Paid — 0.0012 BNB</a>
     </div>
     <div class="stats" role="list" aria-label="Supply summary">
@@ -376,10 +377,10 @@ footer.site img{width:48px;height:48px;object-fit:cover;clip-path:polygon(50% 0,
   <div class="wrap reveal">
     <p class="kicker">The Mint</p>
     <h2 class="stitle">Choose your <em>issue.</em></h2>
-    <p class="ssub">Steel for verified agents. Gold for everyone — and the only door to Rare and Legendary.</p>
+    <p class="ssub">Free steel is gone — all 1,888 claimed. Gold for everyone — and the only door to Rare and Legendary.</p>
     <div class="msteps" aria-label="How to mint in 3 steps">
       <div class="mstep"><b>1 — Connect wallet</b><span>One tap. BNB Chain.</span></div>
-      <div class="mstep steel"><b>2 — Pick Free or Paid</b><span>Free is steel. Paid is gold.</span></div>
+      <div class="mstep steel"><b>2 — Pick Paid</b><span>Free steel is sold out. Paid is gold.</span></div>
       <div class="mstep"><b>3 — Mint. Your card is engraved automatically.</b><span>Number, owner, tier and date — cut in at mint.</span></div>
     </div>
     <div class="banner" role="note"><span><strong>Free mint is sold out.</strong> All 1,888 Free cards are claimed — Paid is still open on BNB Chain, and minting below is real and on-chain: your wallet signs, the contract strikes, and the counters read the contract directly. Contract: <a href="https://bscscan.com/address/0x3091Fec6e86036951fC131029bCD768f55ed2a92" target="_blank" rel="noopener"><b>0x3091…2a92</b></a>.</span></div>
@@ -387,7 +388,7 @@ footer.site img{width:48px;height:48px;object-fit:cover;clip-path:polygon(50% 0,
     <p class="paidline">Free gets a card. <em>Paid gets the gold, the seal, and the points.</em></p>
     <div class="mgrid">
       <article class="mpanel free" aria-label="Free Mint panel">
-        <span class="mtag">Free — Standard Issue</span>
+        <span class="mtag">Free — Standard Issue · Sold Out</span>
         <div class="mprice">0 <small>BNB</small></div>
         <p class="onerule"><b>Binance Agent ID only · Max 2 per wallet · Standard Common</b> — Nº F-0001 – F-1888</p>
         <p class="quietline">Standard steel. No draw, no seal, 10 points a day.</p>
@@ -528,12 +529,12 @@ footer.site img{width:48px;height:48px;object-fit:cover;clip-path:polygon(50% 0,
   <div class="wrap reveal">
     <p class="kicker">Agent Mint</p>
     <h2 class="stitle">Let your agent <em>mint for you.</em></h2>
-    <p class="ssub">Copy one prompt. Paste it to your AI agent. Done.</p>
+    <p class="ssub">Free is sold out — the Paid prompt is the only way in.</p>
     <div class="apanel">
       <div class="pgrid">
         <div class="pcard">
-          <header><span class="plabel">FREE PROMPT</span><button class="copyb" type="button" data-copy="freePrompt">Copy</button></header>
-          <textarea id="freePrompt" readonly aria-label="Free Mint agent prompt">Mint 1 FREE AgentCard for me on BNB Chain. Contract: 0x3091Fec6e86036951fC131029bCD768f55ed2a92 — call freeMint(1), price 0 BNB. Rules: Binance Agent ID holders only, max 2 per wallet, Standard Common card. When done, show me the transaction link and my card inscription (number, owner, tier, date).</textarea>
+          <header><span class="plabel">FREE PROMPT — SOLD OUT</span><button class="copyb" type="button" data-copy="freePrompt">Copy</button></header>
+          <textarea id="freePrompt" readonly aria-label="Free Mint agent prompt">FREE MINT IS SOLD OUT — all 1,888 Free AgentCards are claimed. Do NOT call freeMint; it will revert. The only way in is PAID: call paidMint(1) on contract 0x3091Fec6e86036951fC131029bCD768f55ed2a92 with 0.0012 BNB (see the Paid prompt).</textarea>
         </div>
         <div class="pcard">
           <header><span class="plabel">PAID PROMPT</span><button class="copyb" type="button" data-copy="paidPrompt">Copy</button></header>
@@ -567,7 +568,7 @@ footer.site img{width:48px;height:48px;object-fit:cover;clip-path:polygon(50% 0,
       <details class="fi"><summary>What is the difference between Free and Paid?<span class="chev" aria-hidden="true">+</span></summary><div class="fb"><p>Free: 0 BNB, Agent ID holders, max 2, steel Standard Common — no roll. Paid: 0.0012 BNB, all wallets, max 5, gold Premium — the only rarity roll (Common 50% · Rare 32% · Legendary 18%). Same 3 steps either way.</p></div></details>
       <details class="fi"><summary>Do I have to wait for Free Mint to end before I can Paid Mint?<span class="chev" aria-hidden="true">+</span></summary><div class="fb"><p>No. There are no phases. Free and Paid are separate pools — 1,888 and 334 — and both open at the same moment. Paid Mint never waits for Free, and it never needs a Binance Agent ID.</p></div></details>
       <details class="fi"><summary>How does the inscription work?<span class="chev" aria-hidden="true">+</span></summary><div class="fb"><p>Automatically at step 3. Number (F- within 1,888, P- within 334), your wallet as owner, tier, issue and mint date — engraved in gold on Paid, stamped in steel on Free.</p></div></details>
-      <details class="fi"><summary>Can I trade my card?<span class="chev" aria-hidden="true">+</span></summary><div class="fb"><p>Yes — every AgentCard is a standard ERC-721 you can list, sell and trade on any BNB Chain marketplace. The contract is live on BNB Chain (0x3091…2a92). Free mint has sold out (1,888 of 1,888 claimed); Paid mint is still open. To mint: 1 — Connect wallet, 2 — Pick Free or Paid, 3 — Mint — or use the two prompts in Agent Mint.</p></div></details>
+      <details class="fi"><summary>Can I trade my card?<span class="chev" aria-hidden="true">+</span></summary><div class="fb"><p>Yes — every AgentCard is a standard ERC-721 you can list, sell and trade on any BNB Chain marketplace. The contract is live on BNB Chain (0x3091…2a92). Free mint has sold out (1,888 of 1,888 claimed); Paid mint is still open. To mint: 1 — Connect wallet, 2 — Pick Paid, 3 — Mint — or use the two prompts in Agent Mint.</p></div></details>
     </div>
   </div>
 </section>
@@ -611,7 +612,7 @@ function hexToInt(h){return h&&h!=="0x"?parseInt(h,16):0}
 async function rpcCall(method,params){var last=null;for(var i=0;i<RPC_URLS.length;i++){try{var r=await fetch(RPC_URLS[i],{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:method,params:params})});var j=await r.json();if(j.error)throw new Error(j.error.message||"rpc error");return j.result}catch(e){last=e}}throw last||new Error("RPC unreachable")}
 async function callChain(data){return rpcCall("eth_call",[{to:CONTRACT,data:data},"latest"])}
 async function chainUint(sel,arg){var out=await callChain(sel+(arg||""));return hexToInt(out)}
-async function refreshChain(){try{var o=await callChain(SEL.mintOpen);var f=await chainUint(SEL.freeMinted);var p=await chainUint(SEL.paidMinted);var t=await chainUint(SEL.totalMinted);chain.open=hexToInt(o)===1;chain.free=f;chain.paid=p;chain.total=t;chain.loaded=true;state.freeMinted=f;state.paidMinted=p;renderSupply();if(!chain.open){setStatus("freeStatus","Contract live \u2014 mint is not open yet. It opens soon, Free and Paid together.","");setStatus("paidStatus","Contract live \u2014 mint is not open yet. It opens soon, Free and Paid together.","")}else if(chain.free>=1888){setStatus("freeStatus","Free Mint SOLD OUT \u2014 all 1,888 claimed by Agent ID holders.","ok");setStatus("paidStatus","Mint is LIVE \u2014 Paid Mint is open to every wallet.","ok")}else{setStatus("freeStatus","Mint is LIVE \u2014 Free Mint is open for Binance Agent ID holders.","ok");setStatus("paidStatus","Mint is LIVE \u2014 Paid Mint is open to every wallet.","ok")}if(state.wallet)refreshWalletUsage()}catch(e){}}
+async function refreshChain(){try{var o=await callChain(SEL.mintOpen);var f=await chainUint(SEL.freeMinted);var p=await chainUint(SEL.paidMinted);var t=await chainUint(SEL.totalMinted);chain.open=hexToInt(o)===1;chain.free=f;chain.paid=p;chain.total=t;chain.loaded=true;state.freeMinted=f;state.paidMinted=p;renderSupply();if(!chain.open){setStatus("freeStatus","Contract live \u2014 mint is not open yet. It opens soon, Free and Paid together.","");setStatus("paidStatus","Contract live \u2014 mint is not open yet. It opens soon, Free and Paid together.","")}else if(chain.free>=1888){setStatus("freeStatus","Free Mint SOLD OUT \u2014 all 1,888 claimed by Agent ID holders.","ok");var fb=$("freeMintBtn");if(fb){fb.disabled=true;fb.textContent="Sold Out"}var fm=$("freeMinus"),fp=$("freePlus");if(fm)fm.disabled=true;if(fp)fp.disabled=true;var vb=$("verifyAgentBtn");if(vb)vb.disabled=true;setStatus("paidStatus","Mint is LIVE \u2014 Paid Mint is open to every wallet.","ok")}else{setStatus("freeStatus","Mint is LIVE \u2014 Free Mint is open for Binance Agent ID holders.","ok");setStatus("paidStatus","Mint is LIVE \u2014 Paid Mint is open to every wallet.","ok")}if(state.wallet)refreshWalletUsage()}catch(e){}}
 async function refreshWalletUsage(){if(!state.wallet)return;try{state.freeUsed=await chainUint(SEL.freeBy,encAddr(state.wallet));state.paidUsed=await chainUint(SEL.paidBy,encAddr(state.wallet))}catch(e){}}
 async function chainHasAgentId(a){try{return (await chainUint(SEL.hasAgentId,encAddr(a)))===1}catch(e){return false}}
 async function walletTx(data,valueWei){var value="0x"+BigInt(valueWei).toString(16);var hash=await window.ethereum.request({method:"eth_sendTransaction",params:[{from:state.wallet,to:CONTRACT,data:data,value:value}]});for(var i=0;i<90;i++){await delay(2000);var rc=null;try{rc=await rpcCall("eth_getTransactionReceipt",[hash])}catch(e){}if(rc)return{hash:hash,receipt:rc}}return{hash:hash,receipt:null}}
